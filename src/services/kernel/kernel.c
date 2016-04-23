@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
     /* NB: don't reorder them */
     if ((getterfd = spawnproc(argv[0], instad, initfd, "getter")) < 0) cont = 0;
-    wait_for_msg(getterfd, "ready");
+    sleep(5);
     if ((senderfd = spawnproc(argv[0], instad, initfd, "sender")) < 0) cont = 0;
     if ((viewfd = spawnproc(argv[0], instad, initfd, "view")) < 0) cont = 0;
 

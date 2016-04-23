@@ -23,7 +23,8 @@ void wait_for_msg(fd_t fd, const char *msg)
 
     while (1) {
         len = recv(fd, buff, buff_len, 0);
-        buff[len] = '\0';
+        // buff[len] = '\0';
+        printf("waiting: %s\n", buff);
 
         if (strcmp(buff, msg) == 0 || len == 0) break;
     }

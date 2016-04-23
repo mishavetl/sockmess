@@ -27,22 +27,22 @@
 #include "../../utils/subprocutils/inc.h"
 #include "../../utils/uniutils/inc.h"
 
-#define MSGLEN 256
-#define MSGARLEN 5
+#include "viewutils.h"
 
-#define CLEAR_CURSOR_CMD "\e[2J\e[0;0H"
-
-int msglen = 0;
-char msg[MSGARLEN][MSGLEN];
+#define CMD_PROMPT "#> "
 
 int main(int argc, char *argv[])
 {
     int retval, cont = 1;
     fd_t kernelfd = 0;
 
+    size_t len;
+
     const int buff_len = BUFF_LEN;
     char buff[BUFF_LEN];
     char buff_copy[BUFF_LEN];
+
+    // char *msg;
 
     struct timeval timeout;
 
@@ -70,23 +70,15 @@ int main(int argc, char *argv[])
         FD_SET(kernelfd, &sockset);
         timeout = (struct timeval) TIMEOUT_VIEW;
 
-        printf(">> ");
-        scanf("%s", buff);
+        printf(CMD_PROMPT);
+
+        fgets(buff, buff_len, stdin);
+        buff[strlen(buff) - 1] = '\0';
 
         /* check reserved commands */
 
-        if (buff[0] == 'q') {
+        if (check_cmd(buff, buff_copy, buff_len, kernelfd)) {
             break;
-        } else if (buff[0] == 's') {
-            scanf("%s", buff);
-            printf("[i] (view) sending '%s'\n", buff);
-            send(kernelfd, buff, strlen(buff), 0);
-        } else if (buff[0] == 'c') {
-            printf(CLEAR_CURSOR_CMD);
-        } else if (buff[0] == 'a') { // send a message to partner
-            send(kernelfd, buff, strlen(buff), 0);
-        } else {
-            printf("[e] (view) '%c' is not known\n", buff[0]);
         }
 
         /* select fd */
@@ -102,9 +94,6 @@ int main(int argc, char *argv[])
                 break;
             }
         }
-
-        // draw(buff);
-        // sleep(1);
     }
 
     puts("[i] (view) exiting");

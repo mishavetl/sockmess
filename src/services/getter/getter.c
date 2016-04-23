@@ -66,10 +66,6 @@ int main(int argc, char *argv[])
         cont = 0;
     }
 
-    snprintf(buff, buff_len, "ready");
-
-    send(kernelfd, buff, strlen(buff), 0);
-
     /* main loop */
 
     while (cont) {

@@ -60,5 +60,7 @@ fd_t init_inet_sock(char *argv[])
     snprintf(buff, buff_len, "connected");
     send(inetfd, buff, strlen(buff), 0);
 
+    puts("[i] (getter) connected to partner");
+
     return inetfd;
 }
