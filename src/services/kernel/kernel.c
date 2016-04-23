@@ -13,11 +13,10 @@
 
 #include <sys/socket.h>
 #include <sys/select.h>
-#include <sys/types.h>
 #include <sys/un.h>
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <linux/limits.h>
 
@@ -35,8 +34,10 @@
 #include "kernelutils.h"
 
 #define SLEEP_TIMEOUT 1
-#define TIMEOUT_BEFORE_EXIT 2
+#define TIMEOUT_BEFORE_EXIT 1
 
+int inport;
+int outport;
 
 const int buff_len = BUFF_LEN;
 char buff[BUFF_LEN];
@@ -44,7 +45,7 @@ struct sockaddr_un init_addr;
 
 int main(int argc, char *argv[])
 {
-    fd_t initfd, senderfd, viewfd;
+    fd_t initfd, senderfd, getterfd, viewfd;
     size_t len;
 
     int instad; // instance address
@@ -57,11 +58,20 @@ int main(int argc, char *argv[])
 
     /* generating instance address */
 
-    if (argc > 2) {
-        instad = atoi(argv[2]);
+    if (argc != 4) {
+        puts("[e] (kernel) not enough args");
+        exit(1);
+    }
+
+    srand(time(0));
+    instad = rand();
+
+    if (strcmp(argv[1], "-p") == 0) {
+        inport = atoi(argv[2]);
+        outport = atoi(argv[3]);
     } else {
-        srand(time(0));
-        instad = rand();
+        puts("[e] (kernel) unknown address type");
+        exit(1);
     }
 
     printf("using: %d\n", instad);
@@ -74,8 +84,11 @@ int main(int argc, char *argv[])
 
     /* initializing subprocesses */
 
-    senderfd = spawnproc(argv[0], instad, initfd, "sender");
-    viewfd = spawnproc(argv[0], instad, initfd, "view");
+    /* NB: don't reorder them */
+    if ((getterfd = spawnproc(argv[0], instad, initfd, "getter")) < 0) cont = 0;
+    wait_for_msg(getterfd, "ready");
+    if ((senderfd = spawnproc(argv[0], instad, initfd, "sender")) < 0) cont = 0;
+    if ((viewfd = spawnproc(argv[0], instad, initfd, "view")) < 0) cont = 0;
 
     /* main loop */
 
@@ -90,29 +103,51 @@ int main(int argc, char *argv[])
         memset(buff, 0, buff_len);
 
         if (FD_ISSET(senderfd, &sockset) && retval) { // mesg from the sender
-            len = recvio(senderfd, buff, buff_len, 0);
+            if ((len = recv(senderfd, buff, buff_len, 0)) == 0) {
+                puts("[e] (kernel) lost connection to sender");
+                break;
+            }
+
+            buff[len] = '\0';
+            printf("[i] (kernel) from sender: %s\n", buff);
+        } else if (FD_ISSET(getterfd, &sockset) && retval) { // mesg from the sender
+            if ((len = recv(getterfd, buff, buff_len, 0)) == 0) {
+                puts("[e] (kernel) lost connection to getter");
+                break;
+            }
+
             buff[len] = '\0';
             printf("[i] (kernel) from sender: %s\n", buff);
         } else if (FD_ISSET(viewfd, &sockset) && retval) { // mesg from the view
-            len = recvio(viewfd, buff, buff_len, 0);
+            if ((len = recv(viewfd, buff, buff_len, 0)) == 0) {
+                puts("[e] (kernel) lost connection to view");
+                break;
+            }
+
             buff[len] = '\0';
             printf("[i] (kernel) from view: %s\n", buff);
+
+            if (buff[0] == 'a') {
+                puts("[i] (kernel) sending message");
+                send(senderfd, buff, strlen(buff), 0);
+            }
         }
 
         if (strcmp(buff, "close") == 0) break;
 
-        if (!retval) {
-            sendio(viewfd, "timeout", 7, 0);
-        }
-
         sleep(SLEEP_TIMEOUT);
     }
+
+    puts("[i] shutting down all services");
 
     snprintf(buff, buff_len, "close");
     sendio(senderfd, buff, strlen(buff), 0);
 
     snprintf(buff, buff_len, "close");
     sendio(viewfd, buff, strlen(buff), 0);
+
+    snprintf(buff, buff_len, "close");
+    sendio(getterfd, buff, strlen(buff), 0);
 
     puts("[i] (kernel) exiting");
 

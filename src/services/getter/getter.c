@@ -1,5 +1,5 @@
 /*
-** getter.c -- gets message from sender and sends it to the kernel
+** getter.c -- gets messages from the sender and sends it to the kernel
 */
 
 /*
@@ -12,70 +12,105 @@
  */
 
 #include <sys/socket.h>
-#include <sys/types.h>
-
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <sys/select.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <unistd.h>
 #include <errno.h>
-
 #include <string.h>
 
-#include "config.h"
+#include <time.h>
 
-#include "subproutils.h"
+#include "../../config.h"
+#include "getterutils.h"
+#include "../../utils/subprocutils/inc.h"
+#include "../../utils/uniutils/inc.h"
 
+#define SLEEP_TIMEOUT 1
+
+fd_t listenfd;
 
 int main(int argc, char *argv[])
 {
-    int listenfd = 0, connfd = 0, kernelfd = 0;
-    struct sockaddr_in serv_addr;
-    struct sockaddr_un kernel_addr;
+    size_t len;
+    fd_t inetfd, kernelfd;
 
-    char buff[1024];
+    int cont = 1; // continue or not (boolean)
+    int retval;
 
-    if (argc < 2) {
-        puts("not enough args. second argument is an address of the kernel");
-        exit(1);
+    char buff[BUFF_LEN];
+    const int buff_len = BUFF_LEN;
+
+    struct timeval timeout = TIMEOUT_GETTER;
+    fd_set sockset;
+
+    FD_ZERO(&sockset);
+
+    /* initialization */
+
+    if ((kernelfd = initproc(argc, argv, "getter")) < 0) {
+        cont = 0;
     }
 
-    if ((kernelfd = connect_to_kernel(kernel_addr, argv[1])) < 0) {
-        printf("error when connecting to kernel in getter\n");
-        exit(1);
+    /* confirmation */
+
+    if (confirm(kernelfd, "getter") < 0) {
+        cont = 0;
     }
 
-    // connect to the partner
+    /* connect to the partner */
 
-    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    if ((inetfd = init_inet_sock(argv)) < 0) {
+        cont = 0;
+    }
 
-    memset(&serv_addr, '0', sizeof(serv_addr));
-    memset(buff, '0', sizeof(buff));
+    snprintf(buff, buff_len, "ready");
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(SOCKETMESS_PORT);
+    send(kernelfd, buff, strlen(buff), 0);
 
-    bind(listenfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
+    /* main loop */
 
-    listen(listenfd, 10);
+    while (cont) {
+        FD_SET(kernelfd, &sockset);
+        FD_SET(inetfd, &sockset);
 
-    connfd = accept(listenfd, (struct sockaddr*) NULL, NULL);
+        timeout = (struct timeval) TIMEOUT_GETTER;
 
-    snprintf(buff, 1024, "%s", "connected");
+        if ((retval = select_cust(&sockset, &timeout, "getter")) < 0) break;
 
-    send(kernelfd, buff, strlen(buff));
+        if (FD_ISSET(kernelfd, &sockset) && retval) {
+            if ((len = recv(kernelfd, buff, buff_len, 0)) == 0) {
+                puts("[i] (getter) kernel closed connection");
+                break;
+            }
 
-    while (1) {
-        recv(connfd, buff, sizeof(buff) - 1);
+            printf("[i] (getter) from kernel: %s\n", buff);
+            if (strcmp(buff, "close") == 0) break;
+        } else if (FD_ISSET(inetfd, &sockset) && retval) {
+            memset(buff, 0, buff_len);
+            if ((len = recv(inetfd, buff, buff_len, 0)) == 0) { // len is not working currently
+                puts("[i] (getter) partner closed connection");
+                strcpy(buff, "close");
+                sendio(kernelfd, buff, strlen(buff), 0);
+                break;
+            }
+            // printf("len = %d\n", len);
 
-        // snprintf(sendBuff, sizeof(sendBuff), "%s\r\n", sendBuff);
-        send(kernelfd, buff, strlen(buff));
+            // buff[len] = '\0';
 
-        close(connfd);
-        sleep(1);
+            printf("[i] (getter) from partner: %s\n", buff);
+        }
+
+        sleep(SLEEP_TIMEOUT);
      }
+
+     puts("[i] (getter) exiting");
+
+     close(inetfd);
+     close(listenfd);
+     close(kernelfd);
+
+     return -!cont;
 }

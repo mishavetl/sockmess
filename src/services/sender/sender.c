@@ -32,21 +32,28 @@
 
 #include "../../config.h"
 #include "../../utils/subprocutils/inc.h"
+#include "senderutils.h"
 
 int main(int argc, char *argv[])
 {
-    fd_t kernelfd = 0;
+    fd_t kernelfd, inetfd;
     int cont = 1;
+
+    size_t len;
 
     const int buff_len = BUFF_LEN;
     char buff[BUFF_LEN];
-
-    // struct sockaddr_in partner_addr;
-    struct sockaddr_un kernel_addr;
+    char buff_copy[BUFF_LEN];
 
     /* initialization */
 
     if ((kernelfd = initproc(argc, argv, "sender")) < 0) {
+        cont = 0;
+    }
+
+    /* initialize an inet connection */
+
+    if ((inetfd = init_inet_sock(argv)) < 0) {
         cont = 0;
     }
 
@@ -59,11 +66,17 @@ int main(int argc, char *argv[])
     /* main loop */
 
     while (cont) {
-        recv(kernelfd, buff, buff_len, 0);
+        len = recv(kernelfd, buff, buff_len, 0);
+        buff[len] = '\0';
 
         printf("[i] (sender) from kernel: %s\n", buff);
 
-        if(strcmp(buff, "close") == 0) break;
+        if (strcmp(buff, "close") == 0) break;
+
+        strncpy(buff_copy, buff + 1, strlen(buff) - 1);
+        buff_copy[strlen(buff) - 1] = '\0';
+
+        send(inetfd, buff_copy, strlen(buff_copy), 0);
 
         sleep(1);
     }
@@ -71,40 +84,6 @@ int main(int argc, char *argv[])
     puts("[i] (sender) exiting");
 
     close(kernelfd);
-
-    // if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    //     printf("\n Error : Could not create socket \n");
-    //     return 1;
-    // }
-
-    // memset(&serv_addr, '0', sizeof(serv_addr));
-
-    // serv_addr.sin_family = AF_INET;
-    // serv_addr.sin_port = htons(SOCKETMESS_PORT);
-
-    // if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
-    //     printf("\n inet_pton error occured\n");
-    //     return 1;
-    // }
-
-    // if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-    //    printf("\n Error : Connect Failed \n");
-    //    return 1;
-    // }
-
-    // write(sockfd, "hello", 5);
-    //
-    // while ((len = read(sockfd, buff, sizeof(buff) - 1)) > 0) {
-    //     buff[len] = '\0';
-    //
-    //     if(fputs(buff, stdout) == EOF) {
-    //         printf("\n Error : Fputs error\n");
-    //     }
-    // }
-    //
-    // if(len < 0) {
-    //     printf("\n Read error \n");
-    // }
 
     return -!cont;
 }

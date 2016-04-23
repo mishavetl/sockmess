@@ -17,9 +17,15 @@
  */
 int recvio(fd_t fd, char *buff, size_t buff_len, int flag)
 {
+    size_t len;
+
     if (fcntl(fd, F_GETFD) != -1) {
         if (flag == 0) flag = MSG_NOSIGNAL;
-        return recv(fd, buff, buff_len, flag);
+
+        len = recv(fd, buff, buff_len, flag);
+        buff[len] = '\0';
+
+        return len;
     }
 
     return -1;

@@ -21,10 +21,9 @@
  * @return sockfd ; if error return -1
  *
  */
-int initsubproc(const char *name, fd_t initfd)
+fd_t initsubproc(const char *name, fd_t initfd)
 {
     fd_t sockfd = 0;
-    int len;
 
     char buff[BUFF_LEN];
     const int buff_len = BUFF_LEN;
@@ -36,8 +35,7 @@ int initsubproc(const char *name, fd_t initfd)
 
     // memset(&buff, 0, sizeof(buff));
 
-    len = recv(sockfd, buff, buff_len, 0);
-    buff[len] = '\0';
+    recv(sockfd, buff, buff_len, 0);
 
     if (strcmp(buff, "connected") != 0) {
         printf("error confirmation connection to %s: %s\n", name, buff);
@@ -48,8 +46,6 @@ int initsubproc(const char *name, fd_t initfd)
 
     snprintf(buff, buff_len, "connected");
     send(sockfd, buff, strlen(buff), 0);
-
-    memset(buff, 0, buff_len);
 
     return sockfd;
 }

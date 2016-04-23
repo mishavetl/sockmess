@@ -42,11 +42,15 @@ int main(int argc, char *argv[])
 
     const int buff_len = BUFF_LEN;
     char buff[BUFF_LEN];
+    char buff_copy[BUFF_LEN];
 
     struct timeval timeout;
 
     fd_set sockset;
     FD_ZERO(&sockset);
+
+    memset(buff, 0, buff_len);
+    memset(buff_copy, 0, buff_len);
 
     /* initialization */
 
@@ -79,6 +83,8 @@ int main(int argc, char *argv[])
             send(kernelfd, buff, strlen(buff), 0);
         } else if (buff[0] == 'c') {
             printf(CLEAR_CURSOR_CMD);
+        } else if (buff[0] == 'a') { // send a message to partner
+            send(kernelfd, buff, strlen(buff), 0);
         } else {
             printf("[e] (view) '%c' is not known\n", buff[0]);
         }

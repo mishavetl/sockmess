@@ -24,7 +24,7 @@ extern struct sockaddr_un init_addr;
  */
 fd_t init_main_sock(int instad)
 {
-    fd_t fd = 0;
+    fd_t fd;
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         printf("error initializing socket: %s\n", strerror(errno));
@@ -46,7 +46,7 @@ fd_t init_main_sock(int instad)
         return -1;
     }
 
-    if (listen(fd, 5) != 0) {
+    if (listen(fd, MAX_PENDING_CONNECTIONS) != 0) {
         printf("error listening port: %s\n", strerror(errno));
         return -1;
     }

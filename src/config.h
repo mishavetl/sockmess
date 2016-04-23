@@ -1,10 +1,11 @@
 #ifndef SOCKETMESS_CONFIG_H
 #define SOCKETMESS_CONFIG_H
 
-#define PORT 5000
-#define KERNEL_SOCKPATH "/tmp/socketmess_kernel_socket" // path to the file for the main socket
-#define TMPFILEPATH "/tmp/socketmess_tmpfile"
-#define PROCID_FILE "/tmp/socketmess_procidfile"
+#define PORT 5341
+
+#define KERNEL_SOCKPATH "/tmp/sockmess_kernel_socket" // path to the file for the main socket
+#define TMPFILEPATH "/tmp/sockmess_tmpfile"
+#define PROCID_FILE "/tmp/sockmess_procidfile"
 
 #define BUFF_LEN 1024
 

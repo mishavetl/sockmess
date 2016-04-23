@@ -20,7 +20,7 @@ fd_t initproc(int argc, char *argv[], const char *name)
 
     printf("initializing %s\n", name);
 
-    if (argc < 2) {
+    if (argc < 4) {
         printf("[e] (%s) not enough arguments\n", name);
         printf("[e] (%s) first argument is an address of the kernel\n", name);
         return -1;

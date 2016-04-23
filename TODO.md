@@ -2,5 +2,6 @@ TO DO:
 -----
 
 * 'instad' must be 'instid'
-* select_cust is a uniutils function
-* create DEBUG macros
+* create 'DEBUG(const char* msg)' macros
+* refactoring of the getter service
+* rewrite sendio function. make it not automatic set MSG_NOSIG
