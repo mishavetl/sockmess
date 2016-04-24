@@ -42,5 +42,8 @@ prod:
 	cc $(FLAGS) $(DECRYPTER_F) $(DECRYPTER_OUT)
 	$(POSTHOOK)
 
+tar:
+	tar -cf ../$(BINNAME).tar ../$(BINNAME)
+
 clean:
 	rm -rf bin

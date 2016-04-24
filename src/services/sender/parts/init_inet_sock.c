@@ -28,9 +28,9 @@ fd_t init_inet_sock(char *argv[])
     memset(&addr, 0, sizeof(addr));
 
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(atoi(argv[3]));
+    addr.sin_port = htons(atoi(argv[4]));
 
-    if (inet_pton(AF_INET, argv[1], &addr.sin_addr) < 0) {
+    if (inet_pton(AF_INET, argv[2], &addr.sin_addr) < 0) {
         puts("[e] (sender) inet_pton error occured");
         return -1;
     }

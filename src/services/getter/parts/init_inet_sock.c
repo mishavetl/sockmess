@@ -35,7 +35,7 @@ fd_t init_inet_sock(char *argv[])
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htons(atoi(argv[2]));
+    addr.sin_port = htons(atoi(argv[3]));
 
     if (bind(
             listenfd,

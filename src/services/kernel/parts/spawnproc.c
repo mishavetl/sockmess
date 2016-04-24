@@ -14,8 +14,9 @@
 #include "../kernelutils.h"
 #include "../../../utils/uniutils/inc.h"
 
-#define SUBPROC_ARGC 3
+#define SUBPROC_ARGC 4
 
+extern char *hostname;
 extern int inport;
 extern int outport;
 
@@ -35,13 +36,14 @@ fd_t spawnproc(const char *filename, int instad, fd_t initfd, const char *procna
 
         snprintf(_argv[0], PATH_MAX, "%s_%s", filename, procname);
         snprintf(_argv[1], BUFF_LEN, "%d", instad);
-        snprintf(_argv[2], BUFF_LEN, "%d", inport);
-        snprintf(_argv[3], BUFF_LEN, "%d", outport);
+        snprintf(_argv[2], BUFF_LEN, "%s", hostname);
+        snprintf(_argv[3], BUFF_LEN, "%d", inport);
+        snprintf(_argv[4], BUFF_LEN, "%d", outport);
 
         // puts(_argv[2]);
         // puts(_argv[3]);
 
-        if (execv(_argv[0], (char *[]) {_argv[0], _argv[1], _argv[2], _argv[3], NULL}) < 0) {
+        if (execv(_argv[0], (char *[]) {_argv[0], _argv[1], _argv[2], _argv[3], _argv[4], NULL}) < 0) {
             printf("[e] error running subproc %s: %s", procname, strerror(errno));
             return -1;
         }

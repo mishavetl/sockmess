@@ -37,6 +37,8 @@
 #define TIMEOUT_BEFORE_EXIT 1
 #define CONNECTION_TIMEOUT 5
 
+char *hostname;
+
 int inport;
 int outport;
 
@@ -67,13 +69,9 @@ int main(int argc, char *argv[])
     srand(time(0));
     instad = rand();
 
-    if (strcmp(argv[1], "-p") == 0) {
-        inport = atoi(argv[2]);
-        outport = atoi(argv[3]);
-    } else {
-        puts("[e] (kernel) unknown address type");
-        exit(1);
-    }
+    inport = atoi(argv[2]);
+    outport = atoi(argv[3]);
+    hostname = argv[1];
 
     printf("using: %d\n", instad);
 
