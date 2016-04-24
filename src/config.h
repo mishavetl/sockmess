@@ -13,6 +13,8 @@
 #define TIMEOUT_VIEW {0, 5}
 #define TIMEOUT_GETTER {2, 0}
 #define TIMEOUT_SENDER {2, 0}
+#define TIMEOUT_ENCRYPTER {2, 0}
+#define TIMEOUT_DECRYPTER {2, 0}
 
 /* types */
 

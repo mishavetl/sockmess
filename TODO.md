@@ -6,3 +6,4 @@ TO DO:
 * refactoring of the getter service
 * rewrite sendio function. make it not automatic set MSG_NOSIG
 * create encrypter and decrypter services
+* create uniutils function named exit_with_error
